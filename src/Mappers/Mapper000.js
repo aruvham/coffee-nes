@@ -1,4 +1,4 @@
-class Mapper_000 {
+class Mapper000 {
     constructor({ header: { prgBanks, chrBanks } }) {
         this.prgBanks = prgBanks;
         this.chrBanks = chrBanks;
@@ -36,4 +36,4 @@ class Mapper_000 {
     }
 }
 
-export default Mapper_000;
+export default Mapper000;

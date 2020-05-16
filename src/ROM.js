@@ -1,7 +1,7 @@
-import Mapper_000 from './Mappers/Mapper_000';
+import Mapper000 from './Mappers/Mapper000';
 
 const mappers = new Map();
-mappers.add(0, Mapper_000);
+mappers.add(0, Mapper000);
 
 class ROM {
     constructor(data) {

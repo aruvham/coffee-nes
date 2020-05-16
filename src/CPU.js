@@ -306,6 +306,10 @@ class CPU {
         return this.nes.cpuRead(addr, false);
     }
 
+    // read16(addr) {
+    //     return (this.read(addr + 1) << 8) | this.read(addr);
+    // }
+
     write(addr, data) {
         if (addr < 0 || addr > 0xFFFF) console.error('Error | Writing to mem', addr);
         this.nes.cpuWrite(addr, data);
