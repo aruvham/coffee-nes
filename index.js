@@ -78,6 +78,7 @@ const drawSprite = (sprite, x, y, pixelData) => {
 
 const drawScreen = () => {
     stroke(0);
+    strokeWeight(2);
     noFill();
     rect(0, 0, 256, 240);
     const screenPixelData = nes.ppu.getScreen();
@@ -86,6 +87,7 @@ const drawScreen = () => {
 
 const drawPatternTables = () => {
     stroke(0);
+    strokeWeight(2);
     noFill();
     rect(0, 250, 128, 128);
     rect(138, 250, 128, 128);
@@ -97,12 +99,12 @@ const drawPatternTables = () => {
 
 const drawPaletteTable = () => {
     stroke(0);
+    strokeWeight(2);
     noFill();
 
     for (let i = 0; i < 8; i++) {
         const x = i * 20;
-        const strokeColor = (selectedPalette === i) ? 255 : 0;
-        stroke(strokeColor);
+        stroke(0);
         rect(x, 388, 15, 40);
 
         for (let j = 0; j < 4; j++) {
@@ -111,6 +113,17 @@ const drawPaletteTable = () => {
             noStroke();
             fill(color);
             rect(x, y, 15, 10);
+
+            if (j < 3) {
+                stroke(0);
+                line(x, y + 10, x + 15, y + 10);
+            }
+        }
+
+        if (i === selectedPalette) {
+            fill(255, 0, 0);
+            noStroke();
+            text('*', x, 443);
         }
     }
 };

@@ -20,18 +20,6 @@ class NES {
         this.reset();
     }
 
-    cpuWrite(addr, data) {
-        if (this.rom.cpuWrite(addr, data)) {
-            // Cartridge Address Range
-        } else if (addr >= 0x0000 && addr <= 0x1FFF) {
-            // System RAM Address Range, mirrored every 2048
-            this.ram[addr & 0x0FF] = data;
-        } else if (addr >= 0x2000 && addr <= 0x3FFF) {
-            // PPU Address range, mirrored every 8
-            this.ppu.cpuWrite(addr & 0x0007, data);
-        }
-    }
-
     cpuRead(addr, readOnly) {
         let data = 0x00;
         const romReadData = this.rom.cpuRead(addr);
@@ -48,6 +36,18 @@ class NES {
         }
 
         return data;
+    }
+
+    cpuWrite(addr, data) {
+        if (this.rom.cpuWrite(addr, data)) {
+            // Cartridge Address Range
+        } else if (addr >= 0x0000 && addr <= 0x1FFF) {
+            // System RAM Address Range, mirrored every 2048
+            this.ram[addr & 0x0FF] = data;
+        } else if (addr >= 0x2000 && addr <= 0x3FFF) {
+            // PPU Address range, mirrored every 8
+            this.ppu.cpuWrite(addr & 0x0007, data);
+        }
     }
 
     reset() {

@@ -90,7 +90,7 @@ class ROM {
     }
 
     ppuRead(addr) {
-        const mappedAddr = this.mapper.mapPpuWriteAddr(addr);
+        const mappedAddr = this.mapper.mapPpuReadAddr(addr);
         if (mappedAddr !== false) {
             return this.chrMemory[mappedAddr];
         }
@@ -98,7 +98,7 @@ class ROM {
     }
 
     ppuWrite(addr, data) {
-        const mappedAddr = this.mapper.maPpuWriteAddr(addr);
+        const mappedAddr = this.mapper.mapPpuWriteAddr(addr);
         if (mappedAddr !== false) {
             this.chrMemory[mappedAddr] = data;
             return true;
