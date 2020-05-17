@@ -1,8 +1,12 @@
 /* eslint-disable */
 import NES from './src/NES';
-import { nestest } from './roms/js';
+import {
+    nestest,
+    donkey_kong
+} from './roms/js';
 
-const FPS = 1;
+const FPS = 5;
+const romFile = donkey_kong;
 
 const preload = () => {
     window.retroFont = loadFont('./assets/retro_gaming.ttf');
@@ -22,8 +26,8 @@ const setup = () => {
 
     // NES
     window.nes = new NES();
-    nes.loadRom(nestest);
-
+    nes.loadRom(romFile);
+    
     // Rendering & Sprites
     window.screenSprite = createImage(256, 240);
     window.nameTableSprites = [createImage(256, 240), createImage(256, 240)];

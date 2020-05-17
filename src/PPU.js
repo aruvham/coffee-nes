@@ -146,8 +146,8 @@ class PPU {
                     let tileLsb = this.ppuRead((idx * 0x1000) + offset + row);
                     let tileMsb = this.ppuRead((idx * 0x1000) + offset + row + 8);
                     for (let col = 0; col < 8; col++) {
-                        const colorIdx = ((tileMsb & 0x01) << 1) | (tileLsb & 0x01);
-                        const color = this.getColorFromPaletteTable(palette, colorIdx);
+                        const colorIdx = ((tileLsb & 0x01) << 1) | (tileMsb & 0x01);
+                        const color = this.getColorFromPaletteTable(colorIdx, palette);
                         const pixelX = tileX * 8 + (7 - col);
                         const pixelY = tileY * 8 + row;
                         this.setPatternTablePixel(pixelX, pixelY, color, idx);
@@ -202,6 +202,7 @@ class PPU {
                 data = this.ppuDataBuffer;
             }
 
+            this.ppuAddr++;
             break;
         }
 
@@ -238,6 +239,7 @@ class PPU {
             break;
         case 0x0007: // PPU Data
             this.ppuWrite(this.ppuAddr, data);
+            this.ppuAddr++;
             break;
         }
     }
