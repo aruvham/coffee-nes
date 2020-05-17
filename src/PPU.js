@@ -67,7 +67,8 @@ const paletteLookup = [
 ];
 
 class PPU {
-    constructor() {
+    constructor(nes) {
+        this.nes = nes;
         this.rom = null;
         this.nameTables = [new Uint8Array(1024), new Uint8Array(1024)];
         this.patternTables = [new Uint8Array(4096), new Uint8Array(4096)];
@@ -82,16 +83,56 @@ class PPU {
         this.clockCounter = 0;
     }
 
+    getColorFromPaletteTable(colorIdx, palette) {
+        return paletteLookup[this.ppuRead(0x3F00 + (palette << 2) + colorIdx) & 0x3F];
+    }
+
     getScreen() {
         return this.screenSprite;
+    }
+
+    setScreenPixel(x, y, colorCode) {
+        const color = paletteLookup[colorCode];
+        const idx = ((y * 240) + x) * 4;
+        this.screenSprite[idx] = color[0];
+        this.screenSprite[idx + 1] = color[1];
+        this.screenSprite[idx + 2] = color[2];
+        this.screenSprite[idx + 3] = 255;
     }
 
     getNameTable(idx) {
         return this.nameTableSprites[idx];
     }
 
-    getPatternTable(idx) {
+    getPatternTable(idx, palette) {
+        for (let tileY = 0; tileY < 16; tileY++) {
+            for (let tileX = 0; tileX < 16; tileX++) {
+                const offset = (tileY * 256) + (tileX * 16);
+                for (let row = 0; row < 8; row++) {
+                    let tileLsb = this.ppuRead((idx * 0x1000) + offset + row);
+                    let tileMsb = this.ppuRead((idx * 0x1000) + offset + row + 8);
+                    for (let col = 0; col < 8; col++) {
+                        const colorIdx = ((tileMsb & 0x01) << 1) | (tileLsb & 0x01);
+                        const color = this.getColorFromPaletteTable(palette, colorIdx);
+                        const pixelX = tileX * 8 + (7 - col);
+                        const pixelY = tileY * 8 + row;
+                        this.setPatternTablePixel(pixelX, pixelY, color, idx);
+                        tileLsb >>= 1;
+                        tileMsb >>= 1;
+                    }
+                }
+            }
+        }
+
         return this.patternTableSprites[idx];
+    }
+
+    setPatternTablePixel(x, y, color, patternTableIdx) {
+        const idx = ((y * 128) + x) * 4;
+        this.patternTableSprites[patternTableIdx][idx] = color[0];
+        this.patternTableSprites[patternTableIdx][idx + 1] = color[1];
+        this.patternTableSprites[patternTableIdx][idx + 2] = color[2];
+        this.patternTableSprites[patternTableIdx][idx + 3] = 255;
     }
 
     cpuRead(addr) {
@@ -161,6 +202,9 @@ class PPU {
     }
 
     clock() {
+        // Fake noise
+        this.setScreenPixel(this.cycle - 1, this.scanline, Math.random() > 0.5 ? 0x3F : 0x30);
+
         this.cycle++;
         if (this.cycle >= 341) {
             this.cycle = 0;
@@ -168,6 +212,7 @@ class PPU {
 
             if (this.scanline >= 261) {
                 this.scanline = -1;
+                this.nes.frameCounter++;
             }
         }
 

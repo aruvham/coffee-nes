@@ -1,7 +1,7 @@
 import Mapper000 from './Mappers/Mapper000';
 
 const mappers = new Map();
-mappers.add(0, Mapper000);
+mappers.set(0, Mapper000);
 
 class ROM {
     constructor(data) {
@@ -66,7 +66,8 @@ class ROM {
         }
 
         // Load mapper
-        this.mappers = mappers.get(this.mapperId);
+        const MapperClass = mappers.get(this.mapperId);
+        this.mapper = new MapperClass(this);
         if (!this.mapper) {
             console.error('Unsupperted mapper: ', this.mapperId);
         }

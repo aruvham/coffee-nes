@@ -1,20 +1,23 @@
 import CPU from './CPU';
+import PPU from './PPU';
 import ROM from './ROM';
 
 class NES {
     constructor() {
         this.cpu = new CPU(this);
+        this.ppu = new PPU(this);
         this.rom = null;
-        this.ppu = null;
         this.ram = new Uint8Array(0x0800);
 
         this.clockCounter = 0;
+        this.frameCounter = 0;
     }
 
     loadRom(romData) {
         const rom = new ROM(romData);
         this.rom = rom;
-        this.ppu.rom = rom; // ???
+        this.ppu.rom = rom;
+        this.reset();
     }
 
     cpuWrite(addr, data) {
@@ -50,6 +53,7 @@ class NES {
     reset() {
         this.cpu.reset();
         this.clockCounter = 0;
+        this.frameCounter = 0;
     }
 
     clock() {
