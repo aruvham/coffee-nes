@@ -202,7 +202,7 @@ class PPU {
                 data = this.ppuDataBuffer;
             }
 
-            this.ppuAddr++;
+            this.ppuAddr += this.incrementMode ? 32 : 1;
             break;
         }
 
@@ -239,7 +239,7 @@ class PPU {
             break;
         case 0x0007: // PPU Data
             this.ppuWrite(this.ppuAddr, data);
-            this.ppuAddr++;
+            this.ppuAddr += this.incrementMode ? 32 : 1;
             break;
         }
     }
@@ -257,6 +257,28 @@ class PPU {
             data = this.patternTables[(addr & 0x1000) >> 12][addr & 0x0FFF];
         } else if (addr >= 0x2000 && addr <= 0x3EFF) {
             // Name table mem
+            addr &= 0x0FFF;
+            if (this.nes.rom.mirror === 'VERTICAL') {
+                if (addr >= 0x0000 && addr <= 0x03FF) {
+                    data = this.nameTables[0][addr & 0x03FF];
+                } else if (addr >= 0x0400 && addr <= 0x07FF) {
+                    data = this.nameTables[1][addr & 0x03FF];
+                } else if (addr >= 0x0800 && addr <= 0x0BFF) {
+                    data = this.nameTables[0][addr & 0x03FF];
+                } else if (addr >= 0x0C00 && addr <= 0x0FFF) {
+                    data = this.nameTables[1][addr & 0x03FF];
+                }
+            } else if (this.nes.rom.mirror === 'HORIZONTAL') {
+                if (addr >= 0x0000 && addr <= 0x03FF) {
+                    data = this.nameTables[0][addr & 0x03FF];
+                } else if (addr >= 0x0400 && addr <= 0x07FF) {
+                    data = this.nameTables[0][addr & 0x03FF];
+                } else if (addr >= 0x0800 && addr <= 0x0BFF) {
+                    data = this.nameTables[1][addr & 0x03FF];
+                } else if (addr >= 0x0C00 && addr <= 0x0FFF) {
+                    data = this.nameTables[1][addr & 0x03FF];
+                }
+            }
         } else if (addr >= 0x3F00 && addr <= 0x3FFF) {
             // Palette mem
             // ???
@@ -281,6 +303,28 @@ class PPU {
             this.patternTables[(addr & 0x1000) >> 12][addr & 0x0FFF] = data;
         } else if (addr >= 0x2000 && addr <= 0x3EFF) {
             // Name table mem
+            addr &= 0x0FFF;
+            if (this.nes.rom.mirror === 'VERTICAL') {
+                if (addr >= 0x0000 && addr <= 0x03FF) {
+                    this.nameTables[0][addr & 0x03FF] = data;
+                } else if (addr >= 0x0400 && addr <= 0x07FF) {
+                    this.nameTables[1][addr & 0x03FF] = data;
+                } else if (addr >= 0x0800 && addr <= 0x0BFF) {
+                    this.nameTables[0][addr & 0x03FF] = data;
+                } else if (addr >= 0x0C00 && addr <= 0x0FFF) {
+                    this.nameTables[1][addr & 0x03FF] = data;
+                }
+            } else if (this.nes.rom.mirror === 'HORIZONTAL') {
+                if (addr >= 0x0000 && addr <= 0x03FF) {
+                    this.nameTables[0][addr & 0x03FF] = data;
+                } else if (addr >= 0x0400 && addr <= 0x07FF) {
+                    this.nameTables[0][addr & 0x03FF] = data;
+                } else if (addr >= 0x0800 && addr <= 0x0BFF) {
+                    this.nameTables[1][addr & 0x03FF] = data;
+                } else if (addr >= 0x0C00 && addr <= 0x0FFF) {
+                    this.nameTables[1][addr & 0x03FF] = data;
+                }
+            }
         } else if (addr >= 0x3F00 && addr <= 0x3FFF) {
             // Palette mem
             // ???

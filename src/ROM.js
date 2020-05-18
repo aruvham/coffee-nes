@@ -67,9 +67,10 @@ class ROM {
 
         // Load mapper
         const MapperClass = mappers.get(this.mapperId);
-        this.mapper = new MapperClass(this);
-        if (!this.mapper) {
+        if (!MapperClass) {
             console.error('Unsupperted mapper: ', this.mapperId);
+        } else {
+            this.mapper = new MapperClass(this);
         }
     }
 
