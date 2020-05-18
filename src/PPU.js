@@ -97,6 +97,7 @@ class PPU {
         this.renderBackgroundLeft = false; // 1
         this.grayscale = false; // 0
         // Control
+        this.nmi = false;
         this.enableNmi = false; // 7
         this.slaveMode = false; // 6 unused
         this.spriteSize = false; // 5
@@ -180,7 +181,6 @@ class PPU {
             // Not readable
             break;
         case 0x0002: // Status
-            this.verticalBlank = true;
             data = this.getStatus();
             this.verticalBlank = false;
             this.addrLatch = 0;
@@ -297,6 +297,17 @@ class PPU {
         // Fake noise
         this.setScreenPixel(this.cycle - 1, this.scanline, Math.random() > 0.5 ? 0x3F : 0x30);
 
+        if (this.scanline === -1 && this.cycle === 1) {
+            this.verticalBlank = false;
+        }
+
+        if (this.scanline === 241 && this.cycle === 1) {
+            this.verticalBlank = true;
+            if (this.enableNmi) {
+                this.nmi = true;
+            }
+        }
+
         this.cycle++;
         if (this.cycle >= 341) {
             this.cycle = 0;
@@ -354,7 +365,7 @@ class PPU {
     getControl() {
         let control = 0x00;
         control |= (this.enableNmi === true) ? 0x80 : 0x00;
-        // control |= (this.slaveMode === true) ? 0x40 : 0x00;
+        control |= (this.slaveMode === true) ? 0x40 : 0x00;
         control |= (this.spriteSize === true) ? 0x20 : 0x00;
         control |= (this.patternBackground === true) ? 0x10 : 0x00;
         control |= (this.patternSprite === true) ? 0x08 : 0x00;
@@ -366,7 +377,7 @@ class PPU {
 
     setControl(control) {
         this.enableNmi = !!((control >> 7) & 0x01);
-        // this.slaveMode = !!((control >> 6) & 0x01);
+        this.slaveMode = !!((control >> 6) & 0x01);
         this.spriteSize = !!((control >> 5) & 0x01);
         this.patternBackground = !!((control >> 4) & 0x01);
         this.patternSprite = !!((control >> 3) & 0x01);

@@ -29,7 +29,7 @@ class NES {
             data = romReadData;
         } else if (addr >= 0x0000 && addr <= 0x1FFF) {
             // System RAM Address Range, mirrored every 2048
-            data = this.ram[addr & 0x0FF];
+            data = this.ram[addr & 0x07FF];
         } else if (addr >= 0x2000 && addr <= 0x3FFF) {
             // PPU Address range, mirrored every 8
             data = this.ppu.cpuRead(addr & 0x0007, readOnly);
@@ -43,7 +43,7 @@ class NES {
             // Cartridge Address Range
         } else if (addr >= 0x0000 && addr <= 0x1FFF) {
             // System RAM Address Range, mirrored every 2048
-            this.ram[addr & 0x0FF] = data;
+            this.ram[addr & 0x07FF] = data;
         } else if (addr >= 0x2000 && addr <= 0x3FFF) {
             // PPU Address range, mirrored every 8
             this.ppu.cpuWrite(addr & 0x0007, data);
@@ -61,6 +61,11 @@ class NES {
 
         if (this.clockCounter % 3 === 0) {
             this.cpu.clock();
+        }
+
+        if (this.ppu.nmi) {
+            this.ppu.nmi = false;
+            this.cpu.nmi();
         }
 
         this.clockCounter++;

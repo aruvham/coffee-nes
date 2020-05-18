@@ -1,12 +1,9 @@
 /* eslint-disable */
 import NES from './src/NES';
-import {
-    nestest,
-    donkey_kong
-} from './roms/js';
+import * as roms from './roms/js';
 
-const FPS = 5;
-const romFile = donkey_kong;
+const FPS = 20;
+const romFile = roms.donkey_kong;
 
 const preload = () => {
     window.retroFont = loadFont('./assets/retro_gaming.ttf');
