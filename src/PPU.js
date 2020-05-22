@@ -107,15 +107,35 @@ class PPU {
         this.nametableY = false; // 1
         this.nametableX = false; // 0
         // Loopy
-        // uint16_t coarse_x : 5;
-        // uint16_t coarse_y : 5;
-        // uint16_t nametable_x : 1;
-        // uint16_t nametable_y : 1;
-        // uint16_t fine_y : 3;
-        // uint16_t unused : 1;
+        this.fineX = 0x00;
+        // vramAddr
+        this.vramAddr = 0x0000;
+        this.vramCoarseX = 0x00; // 5 bits
+        this.vramCoarseY = 0x00; // 5 bits
+        this.vramNametableX = false;
+        this.vramNametableY = false;
+        this.vramFineY = 0x00; // 3 bits
+        // tramAddr
+        this.tramAddr = 0x0000;
+        this.tramCoarseX = 0x00; // 5 bits
+        this.tramCoarseY = 0x00; // 5 bits
+        this.tramNametableX = false;
+        this.tramNametableY = false;
+        this.tramFineY = 0x00; // 3 bits
+
         this.addrLatch = 0x00;
         this.ppuDataBuffer = 0x00;
-        this.ppuAddr = 0x0000;
+        // this.ppuAddr = 0x0000;
+
+        // Bg rendering
+        this.bgNextTileId = 0x00;
+        this.bgNextTileAttr = 0x00;
+        this.bgNextTileLsb = 0x00;
+        this.bgNextTileMsb = 0x00;
+        this.bgShifterPatternLo = 0x0000;
+        this.bgShifterPatternHi = 0x0000;
+        this.bgShifterAttrLo = 0x0000;
+        this.bgShifterAttrHi = 0x0000;
     }
 
     getColorFromPaletteTable(colorIdx, palette) {
@@ -126,9 +146,8 @@ class PPU {
         return this.screenSprite;
     }
 
-    setScreenPixel(x, y, colorCode) {
-        const color = paletteLookup[colorCode];
-        const idx = ((y * 240) + x) * 4;
+    setScreenPixel(x, y, color) {
+        const idx = ((y * 256) + x) * 4;
         this.screenSprite[idx] = color[0];
         this.screenSprite[idx + 1] = color[1];
         this.screenSprite[idx + 2] = color[2];
@@ -195,14 +214,15 @@ class PPU {
             // Not readable
             break;
         case 0x0007: // PPU Data
+            this.vramAddr = this.getVramAddr();
+
             data = this.ppuDataBuffer;
-            this.ppuDataBuffer = this.ppuRead(addr);
+            this.ppuDataBuffer = this.ppuRead(this.vramAddr);
 
-            if (this.ppuAddr >= 0x3F00) {
-                data = this.ppuDataBuffer;
-            }
+            if (this.vramAddr >= 0x3F00) data = this.ppuDataBuffer;
 
-            this.ppuAddr += this.incrementMode ? 32 : 1;
+            this.vramAddr += this.incrementMode ? 32 : 1;
+            this.setVramAddr(this.vramAddr);
             break;
         }
 
@@ -213,6 +233,8 @@ class PPU {
         switch (addr) {
         case 0x0000: // Control
             this.setControl(data);
+            this.tramNametableX = this.nametableX;
+            this.tramNametableY = this.nametableY;
             break;
         case 0x0001: // Mask
             this.setMask(data);
@@ -225,21 +247,35 @@ class PPU {
         case 0x0004: // OAM Data
             break;
         case 0x0005: // Scroll
-            break;
-        case 0x0006: // PPU Address
             if (this.addrLatch === 0) {
-                // Store hi
-                this.ppuAddr = (this.ppuAddr & 0x00FF) | (data << 8);
+                this.fineX = data & 0x07;
+                this.tramCoarseX = data >> 3;
                 this.addrLatch = 1;
             } else {
-                // Store lo
-                this.ppuAddr = (this.ppuAddr & 0xFF00) | data;
+                this.tramFineY = data & 0x07;
+                this.tramCoarseY = data >> 3;
+                this.addrLatch = 0;
+            }
+            break;
+        case 0x0006: // PPU Address
+            this.tramAddr = this.getTramAddr();
+
+            if (this.addrLatch === 0) {
+                this.tramAddr = ((data & 0x3F) << 8) | (this.tramAddr & 0x00FF);
+                this.setTramAddr(this.tramAddr);
+                this.addrLatch = 1;
+            } else {
+                this.tramAddr = (this.tramAddr & 0xFF00) | data;
+                this.setTramAddr(this.tramAddr);
+                this.setVramAddr(this.tramAddr);
                 this.addrLatch = 0;
             }
             break;
         case 0x0007: // PPU Data
-            this.ppuWrite(this.ppuAddr, data);
-            this.ppuAddr += this.incrementMode ? 32 : 1;
+            this.vramAddr = this.getVramAddr();
+            this.ppuWrite(this.vramAddr, data);
+            this.vramAddr += this.incrementMode ? 32 : 1;
+            this.setVramAddr(this.vramAddr);
             break;
         }
     }
@@ -337,20 +373,156 @@ class PPU {
         }
     }
 
-    clock() {
-        // Fake noise
-        this.setScreenPixel(this.cycle - 1, this.scanline, Math.random() > 0.5 ? 0x3F : 0x30);
-
-        if (this.scanline === -1 && this.cycle === 1) {
-            this.verticalBlank = false;
-        }
-
-        if (this.scanline === 241 && this.cycle === 1) {
-            this.verticalBlank = true;
-            if (this.enableNmi) {
-                this.nmi = true;
+    incrementScrollX() {
+        if (this.renderBackground || this.renderSprites) {
+            if (this.vramCoarseX === 31) {
+                this.vramCoarseX = 0;
+                this.vramNametableX = !this.vramNametableX;
+            } else {
+                this.vramCoarseX++;
             }
         }
+    }
+
+    incrementScrollY() {
+        if (this.renderBackground || this.renderSprites) {
+            if (this.vramFineY < 7) {
+                this.vramFineY++;
+            } else {
+                this.vramFineY = 0;
+
+                if (this.vramCoarseY === 29) {
+                    this.vramCoarseY = 0;
+                    this.vramNametableY = !this.vramNametableY;
+                } else if (this.vramCoarseY === 31) {
+                    this.vramCoarseY = 0;
+                } else {
+                    this.vramCoarseY++;
+                }
+            }
+        }
+    }
+
+    transferAddrX() {
+        if (this.renderBackground || this.renderSprites) {
+            this.vramNametableX = this.tramNametableX;
+            this.vramCoarseX = this.tramCoarseX;
+        }
+    }
+
+    transferAddrY() {
+        if (this.renderBackground || this.renderSprites) {
+            this.vramFineY = this.tramFineY;
+            this.vramNametableY = this.tramNametableY;
+            this.vramCoarseY = this.tramCoarseY;
+        }
+    }
+
+    loadBackgroundShifters() {
+        this.bgShifterPatternLo = (this.bgShifterPatternLo & 0xFF00) | this.bgNextTileLsb;
+        this.bgShifterPatternHi = (this.bgShifterPatternHi & 0xFF00) | this.bgNextTileMsb;
+        this.bgShifterAttrLo = (this.bgShifterAttrLo & 0xFF00) | ((this.bgNextTileAttr & 0b01) ? 0xFF : 0x00);
+        this.bgShifterAttrHi = (this.bgShifterAttrHi & 0xFF00) | ((this.bgNextTileAttr & 0b10) ? 0xFF : 0x00);
+    }
+
+    updateShifters() {
+        if (this.renderBackground) {
+            this.bgShifterPatternLo <<= 1;
+            this.bgShifterPatternHi <<= 1;
+            this.bgShifterAttrLo <<= 1;
+            this.bgShifterAttrHi <<= 1;
+        }
+    }
+
+    clock() {
+        if (this.scanline >= -1 && this.scanline < 240) {
+            if (this.scanline === 0 && this.cycle === 0) {
+                this.cycle = 1;
+            }
+            if (this.scanline === -1 && this.cycle === 1) {
+                this.verticalBlank = false;
+            }
+            if ((this.cycle >= 2 && this.cycle < 258) || (this.cycle >= 321 && this.cycle < 338)) {
+                this.updateShifters();
+                switch ((this.cycle - 1) % 8) {
+                case 0:
+                    this.loadBackgroundShifters();
+                    this.bgNextTileId = this.ppuRead(0x2000 | (this.getVramAddr() & 0x0FFF));
+                    // if (this.bgNextTileId === 42) debugger
+                    break;
+                case 2:
+                    this.bgNextTileAttr = this.ppuRead(0x23C0 | ((this.vramNametableY ? 1 : 0) << 11)
+                    | ((this.vramNametableX ? 1 : 0) << 10)
+                    | ((this.vramCoarseY >> 2) << 3)
+                    | (this.vramCoarseX >> 2));
+                    if (this.vramCoarseY & 0x02) this.bgNextTileAttr >>= 4;
+                    if (this.vramCoarseX & 0x02) this.bgNextTileAttr >>= 2;
+                    this.bgNextTileAttr &= 0x03;
+                    break;
+                case 4:
+                    // if (window.DEBUG) debugger;
+                    // const a = (this.patternBackground ? 1 : 0) << 12;
+                    // const b = this.bgNextTileId << 4;
+                    // const c = (this.vramFineY);
+                    // const d = 0;
+                    // const e = a+b+c+d;
+                    this.bgNextTileLsb = this.ppuRead(((this.patternBackground ? 1 : 0) << 12)
+                    + (this.bgNextTileId << 4)
+                    + (this.vramFineY) + 0);
+                    break;
+                case 6:
+                    this.bgNextTileMsb = this.ppuRead(((this.patternBackground ? 1 : 0) << 12)
+                    + (this.bgNextTileId << 4)
+                    + (this.vramFineY) + 8);
+                    break;
+                case 7:
+                    this.incrementScrollX();
+                    break;
+                }
+            }
+            if (this.cycle === 256) {
+                this.incrementScrollY();
+            }
+            if (this.cycle === 257) {
+                this.loadBackgroundShifters();
+                this.transferAddrX();
+            }
+            if (this.cycle === 338 || this.cycle === 340) {
+                this.bgNextTileId = this.ppuRead(0x2000 | (this.getVramAddr() & 0x0FFF));
+            }
+            if (this.scanline === -1 && this.cycle >= 280 && this.cycle < 305) {
+                this.transferAddrY();
+            }
+        }
+
+        if (this.scanline === 240) {
+            // Do nothing
+        }
+
+        if (this.scanline >= 241 && this.scanline < 261) {
+            if (this.scanline === 241 && this.cycle === 1) {
+                this.verticalBlank = true;
+                if (this.enableNmi) {
+                    this.nmi = true;
+                }
+            }
+        }
+
+        // Render pixel on screen
+        let bgPixel = 0x00;
+        let bgPalette = 0x00;
+        if (this.renderBackground) {
+            const bitMask = 0x8000 >> this.fineX;
+
+            const p0Pixel = ((this.bgShifterPatternLo & bitMask) > 0) ? 1 : 0;
+            const p1Pixel = ((this.bgShifterPatternHi & bitMask) > 0) ? 1 : 0;
+            bgPixel = (p1Pixel << 1) | p0Pixel;
+
+            const bgPalette0 = ((this.bgShifterAttrLo & bitMask) > 0) ? 1 : 0;
+            const bgPalette1 = ((this.bgShifterAttrHi & bitMask) > 0) ? 1 : 0;
+            bgPalette = (bgPalette1 << 1) | bgPalette0;
+        }
+        this.setScreenPixel(this.cycle - 1, this.scanline, this.getColorFromPaletteTable(bgPixel, bgPalette));
 
         this.cycle++;
         if (this.cycle >= 341) {
@@ -428,6 +600,44 @@ class PPU {
         this.incrementMode = !!((control >> 2) & 0x01);
         this.nametableY = !!((control >> 1) & 0x01);
         this.nametableX = !!((control >> 0) & 0x01);
+    }
+
+    getVramAddr() {
+        let vramAddr = 0x00;
+        vramAddr |= this.vramCoarseX;
+        vramAddr |= (this.vramCoarseY << 5);
+        vramAddr |= (this.vramNametableX === true) ? 0x400 : 0x00;
+        vramAddr |= (this.vramNametableY === true) ? 0x800 : 0x00;
+        vramAddr |= (this.vramFineY << 12);
+        vramAddr &= 0x7FFF; // set last bit to 0
+        return vramAddr;
+    }
+
+    setVramAddr(vramAddr) {
+        this.vramCoarseX = vramAddr & 0x1F; // 5 bits
+        this.vramCoarseY = (vramAddr >> 5) & 0x1F; // 5 bits
+        this.vramNametableX = !!((vramAddr >> 10) & 0x01); // 1 bit
+        this.vramNametableY = !!((vramAddr >> 11) & 0x01); // 1 bit
+        this.vramFineY = (vramAddr >> 12) & 0x07; // 3 bits
+    }
+
+    getTramAddr() {
+        let tramAddr = 0x00;
+        tramAddr |= this.tramCoarseX;
+        tramAddr |= (this.tramCoarseY << 5);
+        tramAddr |= (this.tramNametableX === true) ? 0x400 : 0x00;
+        tramAddr |= (this.tramNametableY === true) ? 0x800 : 0x00;
+        tramAddr |= (this.tramFineY << 12);
+        tramAddr &= 0x7FFF; // set last bit to 0
+        return tramAddr;
+    }
+
+    setTramAddr(tramAddr) {
+        this.tramCoarseX = tramAddr & 0x1F; // 5 bits
+        this.tramCoarseY = (tramAddr >> 5) & 0x1F; // 5 bits
+        this.tramNametableX = !!((tramAddr >> 10) & 0x01); // 1 bit
+        this.tramNametableY = !!((tramAddr >> 11) & 0x01); // 1 bit
+        this.tramFineY = (tramAddr >> 12) & 0x07; // 3 bits
     }
 }
 

@@ -4,7 +4,7 @@ import * as roms from './roms';
 
 const FPS = 0;
 const romFile = roms.donkey_kong;
-const nameTableIdx = 1;
+const nameTablePatterIdx = 1;
 const nameTableHex = false;
 
 const preload = () => {
@@ -12,7 +12,7 @@ const preload = () => {
 };
 
 const setup = () => {
-    createCanvas(512, 930);
+    createCanvas(512 * 2, 960);
     background(255);
     textFont(retroFont);
 
@@ -34,7 +34,7 @@ const setup = () => {
 };
 
 const draw = () => {
-    background('darkgrey');
+    background('#1b1b1b');
 
     nesFrame();
 
@@ -42,7 +42,8 @@ const draw = () => {
     drawScreen();
     drawPatternTables();
     drawPaletteTable();
-    drawNameTable();
+    drawNameTable(0);
+    drawNameTable(1);
 };
 
 const keyPressed = () => {
@@ -130,26 +131,25 @@ const drawPaletteTable = () => {
     }
 };
 
-const drawNameTable = () => {
+const drawNameTable = (idx) => {
+    const offsetX = idx * 512;
     stroke(0);
     strokeWeight(2);
     noFill();
-    rect(0, 448, 512, 480);
+    rect(offsetX, 448, 512, 480);
     textSize(8);
     fill(255, 0, 0);
     noStroke();
-    const sprite = patternTableSprites[nameTableIdx];
-    for (let y = 0; y < 30; y++) {
+    const sprite = patternTableSprites[nameTablePatterIdx]; // Which pattern table to use to render bg
+    for (let y = 0; y < 32; y++) {
         for (let x = 0; x < 32; x++) {
-            const value = nes.ppu.nameTables[0][(y * 32) + x];
+            const value = nes.ppu.nameTables[idx][(y * 32) + x];
             const imageX = (value % 16) * 8;
             const imageY = (Math.floor(value / 16)) * 8;
-
+            image(sprite, (x * 16) + offsetX, (y * 16) + 448, 16, 16, imageX, imageY, 8, 8);
             if (nameTableHex) {
-                text(value.toString(16), x * 16, (y * 16) + 464);
+                text(value.toString(16), (x * 16) + offsetX, (y * 16) + 464);
             }
-
-            image(sprite, x * 16, (y * 16) + 448, 16, 16, imageX, imageY, 8, 8);
         }
     }
 };
