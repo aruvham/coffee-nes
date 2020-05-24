@@ -2,9 +2,9 @@
 import NES from './src/NES';
 import * as roms from './roms';
 
-const FPS = 0;
+const FPS = 59;
 const romFile = roms.donkey_kong;
-const nameTablePatterIdx = 1;
+const nameTablePatterIdx = 0;
 const nameTableHex = false;
 
 const preload = () => {
@@ -36,6 +36,7 @@ const setup = () => {
 const draw = () => {
     background('#1b1b1b');
 
+    updateInputs();
     nesFrame();
 
     drawFrameRate();
@@ -44,6 +45,19 @@ const draw = () => {
     drawPaletteTable();
     drawNameTable(0);
     drawNameTable(1);
+};
+
+const updateInputs = () => {
+    let controller = 0x00;
+    if (keyIsDown(75)) controller |= 0x80; // x a
+    if (keyIsDown(76)) controller |= 0x40; // z b
+    if (keyIsDown(SHIFT)) controller |= 0x20; // select
+    if (keyIsDown(ENTER)) controller |= 0x10; // start
+    if (keyIsDown(87)) controller |= 0x08;
+    if (keyIsDown(83)) controller |= 0x04;
+    if (keyIsDown(65)) controller |= 0x02;
+    if (keyIsDown(68)) controller |= 0x01;
+    nes.setController(0, controller);
 };
 
 const keyPressed = () => {

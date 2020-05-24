@@ -136,6 +136,16 @@ class PPU {
         this.bgShifterPatternHi = 0x0000;
         this.bgShifterAttrLo = 0x0000;
         this.bgShifterAttrHi = 0x0000;
+
+        // oam
+        this.oam = new Uint8Array(0xFF); // 256 bites
+        this.oamAddr = 0x00;
+        this.spriteScanline = [];
+        this.spriteCount = 0;
+        this.spriteShifterPatternLo = new Uint8Array(8);
+        this.spriteShifterPatternHi = new Uint8Array(8);
+        this.spriteZeroHitPossible = false;
+        this.spriteZeroBeingRendered = false;
     }
 
     getColorFromPaletteTable(colorIdx, palette) {
@@ -207,6 +217,7 @@ class PPU {
         case 0x0003: // OAM Address
             break;
         case 0x0004: // OAM Data
+            data = this.oam[this.oamAddr];
             break;
         case 0x0005: // Scroll
             break;
@@ -243,8 +254,10 @@ class PPU {
             // Not writable
             break;
         case 0x0003: // OAM Address
+            this.oamAddr = data;
             break;
         case 0x0004: // OAM Data
+            this.oam[this.oamAddr] = data;
             break;
         case 0x0005: // Scroll
             if (this.addrLatch === 0) {
@@ -432,6 +445,17 @@ class PPU {
             this.bgShifterAttrLo <<= 1;
             this.bgShifterAttrHi <<= 1;
         }
+
+        if (this.renderSprites && this.cycle >= 1 && this.cycle < 258) {
+            for (let i = 0; i < this.spriteCount; i++) {
+                if (this.spriteScanline[i].x > 0) {
+                    this.spriteScanline[i].x -= 1;
+                } else {
+                    this.spriteShifterPatternLo[i] <<= 1;
+                    this.spriteShifterPatternHi[i] <<= 1;
+                }
+            }
+        }
     }
 
     clock() {
@@ -441,6 +465,13 @@ class PPU {
             }
             if (this.scanline === -1 && this.cycle === 1) {
                 this.verticalBlank = false;
+                this.spriteOverflow = false;
+                this.spriteZeroHit = false;
+
+                for (let i = 0; i < 8; i++) {
+                    this.spriteShifterPatternLo[i] = 0x00;
+                    this.spriteShifterPatternHi[i] = 0x00;
+                }
             }
             if ((this.cycle >= 2 && this.cycle < 258) || (this.cycle >= 321 && this.cycle < 338)) {
                 this.updateShifters();
@@ -493,6 +524,106 @@ class PPU {
             if (this.scanline === -1 && this.cycle >= 280 && this.cycle < 305) {
                 this.transferAddrY();
             }
+
+
+            // foreground
+            if (this.cycle === 257 && this.scanline >= 0) {
+                this.spriteScanline = [];
+                this.spriteCount = 0;
+
+                for (let i = 0; i < 8; i++) {
+                    this.spriteShifterPatternLo[i] = 0;
+                    this.spriteShifterPatternHi[i] = 0;
+                }
+
+                // sprite evaluation
+                let nOAMEntry = 0;
+                this.spriteZeroHitPossible = false;
+                while (nOAMEntry < 64 && this.spriteCount < 9) {
+                    const oamEntry = this.oamRead(nOAMEntry);
+                    const diff = this.scanline - oamEntry.y;
+
+                    if (diff >= 0 && diff < (this.spriteSize ? 16 : 8)) {
+                        // sprite visible in next scanline
+                        if (this.spriteCount < 8) {
+                            if (nOAMEntry === 0) {
+                                this.spriteZeroHitPossible = true;
+                            }
+
+                            this.spriteScanline.push(oamEntry);
+                            this.spriteCount++;
+                        }
+                    }
+
+                    nOAMEntry++;
+                }
+                this.spriteOverflow = this.spriteCount > 8;
+            }
+
+            if (this.cycle === 340) {
+                for (let i = 0; i < this.spriteCount; i++) {
+                    let spritePatternBitsLo;
+                    let spritePatternBitsHi;
+                    let spritePatternAddrLo;
+                    let spritePatternAddrHi;
+
+                    if (!this.spriteSize) {
+                        // 8x8 mode
+                        if (!(this.spriteScanline[i].attribute & 0x80)) {
+                            // not flipped vertically
+                            spritePatternAddrLo = ((this.patternSprite ? 1 : 0) << 12)
+                                | (this.spriteScanline[i].id << 4)
+                                | (this.scanline - this.spriteScanline[i].y);
+                        } else {
+                            // flipped vertically
+                            spritePatternAddrLo = ((this.patternSprite ? 1 : 0) << 12)
+                            | (this.spriteScanline[i].id << 4)
+                            | (7 - (this.scanline - this.spriteScanline[i].y));
+                        }
+                    } else {
+                        // 8x16 mode
+                        if (!(this.spriteScanline[i].attribute & 0x80)) {
+                            // not flipped vertically
+                            if (this.scanline - this.spriteScanline[i].y < 8) {
+                                spritePatternAddrLo = ((this.spriteScanline[i].id & 0x01) << 12)
+                                | ((this.spriteScanline[i].id & 0xFE) << 4)
+                                | ((this.scanline - this.spriteScanline[i].y) & 0x07);
+                            } else {
+                                if (this.scanline - this.spriteScanline[i].y < 8) {
+                                    spritePatternAddrLo = ((this.spriteScanline[i].id & 0x01) << 12)
+                                    | (((this.spriteScanline[i].id & 0xFE) + 1) << 4)
+                                    | ((this.scanline - this.spriteScanline[i].y) & 0x07);
+                                }
+                            }
+                        } else {
+                            // flipped vertically
+                            if (this.scanline - this.spriteScanline[i].y < 8) {
+                                spritePatternAddrLo = ((this.spriteScanline[i].id & 0x01) << 12)
+                                | (((this.spriteScanline[i].id & 0xFE) + 1) << 4)
+                                | (7 - ((this.scanline - this.spriteScanline[i].y) & 0x07));
+                            } else {
+                                if (this.scanline - this.spriteScanline[i].y < 8) {
+                                    spritePatternAddrLo = ((this.spriteScanline[i].id & 0x01) << 12)
+                                    | ((this.spriteScanline[i].id & 0xFE) << 4)
+                                    | (7 - ((this.scanline - this.spriteScanline[i].y) & 0x07));
+                                }
+                            }
+                        }
+                    }
+                    spritePatternAddrHi = spritePatternAddrLo + 8;
+                    spritePatternBitsLo = this.ppuRead(spritePatternAddrLo);
+                    spritePatternBitsHi = this.ppuRead(spritePatternAddrHi);
+
+                    if ((this.spriteScanline[i].attribute & 0x40)) {
+                        // flipped horizontally
+                        spritePatternBitsLo = this.flipByte(spritePatternBitsLo);
+                        spritePatternBitsHi = this.flipByte(spritePatternBitsHi);
+                    }
+
+                    this.spriteShifterPatternLo[i] = spritePatternBitsLo;
+                    this.spriteShifterPatternHi[i] = spritePatternBitsHi;
+                }
+            }
         }
 
         if (this.scanline === 240) {
@@ -522,7 +653,63 @@ class PPU {
             const bgPalette1 = ((this.bgShifterAttrHi & bitMask) > 0) ? 1 : 0;
             bgPalette = (bgPalette1 << 1) | bgPalette0;
         }
-        this.setScreenPixel(this.cycle - 1, this.scanline, this.getColorFromPaletteTable(bgPixel, bgPalette));
+
+        let fgPixel = 0x00;
+        let fgPalette = 0x00;
+        let fgPriority = 0x00;
+        if (this.renderSprites) {
+            this.spriteZeroBeingRendered = false;
+
+            for (let i = 0; i < this.spriteCount; i++) {
+                if (this.spriteScanline[i].x === 0) {
+                    const fgPixelLo = ((this.spriteShifterPatternLo[i] & 0x80) > 0) ? 1 : 0;
+                    const fgPixelHi = ((this.spriteShifterPatternHi[i] & 0x80) > 0) ? 1 : 0;
+                    fgPixel = (fgPixelHi << 1) | fgPixelLo;
+                    fgPalette = (this.spriteScanline[i].attribute & 0x03) + 0x04;
+                    fgPriority = (this.spriteScanline[i].attribute & 0x20) === 0;
+
+                    if (fgPixel !== 0) {
+                        if (i === 0) {
+                            this.spriteZeroBeingRendered = true;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        let pixel;
+        let palette;
+
+        if (bgPixel === 0 && fgPixel === 0) {
+            pixel = 0x00;
+            palette = 0x00;
+        } else if (bgPixel === 0 && fgPixel > 0) {
+            pixel = fgPixel;
+            palette = fgPalette;
+        } else if (bgPixel > 0 && fgPixel === 0) {
+            pixel = bgPixel;
+            palette = bgPalette;
+        } else if (bgPixel > 0 && fgPixel > 0) {
+            pixel = fgPriority ? fgPixel : bgPixel;
+            palette = fgPriority ? fgPalette : bgPalette;
+            if (this.spriteZeroHitPossible && this.spriteZeroBeingRendered) {
+                if (this.renderBackground && this.renderSprites) {
+                    if (!(this.renderBackgroundLeft || this.renderSpritesLeft)) {
+                        if (this.cycle >= 9 && this.cycle < 258) {
+                            this.spriteZeroHit = true;
+                        }
+                    } else {
+                        if (this.cycle >= 1 && this.cycle < 258) {
+                            this.spriteZeroHit = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        this.setScreenPixel(this.cycle - 1, this.scanline, this.getColorFromPaletteTable(pixel, palette));
+
 
         this.cycle++;
         if (this.cycle >= 341) {
@@ -536,6 +723,17 @@ class PPU {
         }
 
         this.clockCounter++;
+    }
+
+    // oam
+    oamRead(addr) {
+        addr *= 4;
+        return {
+            y: this.oam[addr],
+            id: this.oam[addr + 1],
+            attribute: this.oam[addr + 2],
+            x: this.oam[addr + 3],
+        };
     }
 
     // Registers
@@ -638,6 +836,15 @@ class PPU {
         this.tramNametableX = !!((tramAddr >> 10) & 0x01); // 1 bit
         this.tramNametableY = !!((tramAddr >> 11) & 0x01); // 1 bit
         this.tramFineY = (tramAddr >> 12) & 0x07; // 3 bits
+    }
+
+    // utils 
+    // https://stackoverflow.com/questions/2602823
+    flipByte(b) {
+        b = ((b & 0xF0) >> 4) | ((b & 0x0F) << 4);
+        b = ((b & 0xCC) >> 2) | ((b & 0x33) << 2);
+        b = ((b & 0xAA) >> 1) | ((b & 0x55) << 1);
+        return b;
     }
 }
 
