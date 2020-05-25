@@ -67,9 +67,9 @@ class NES {
             this.ppu.cpuWrite(addr & 0x0007, data);
         } else if (addr === 0x4014) {
             // dma
-            this.dmaPage = data;
-            this.dmaAddr = 0x00;
-            this.dmaTransfer = true;
+            // this.dmaPage = data;
+            // this.dmaAddr = 0x00;
+            // this.dmaTransfer = true;
         } else if (addr === 0x4016 || addr === 0x4017) {
             // Controller
             this.controllerState[addr & 0x01] = this.controller[addr & 0x01];
@@ -86,27 +86,27 @@ class NES {
         this.ppu.clock();
 
         if (this.clockCounter % 3 === 0) {
-            if (this.dmaTransfer) {
-                if (this.dmaDummy) {
-                    if (this.clockCounter % 2 === 1) {
-                        this.dmaDummy = false;
-                    }
-                } else {
-                    if (this.clockCounter % 2 === 0) {
-                        this.dmaData = this.cpuRead(this.dmaPage << 8 | this.dmaAddr);
-                    } else {
-                        this.ppu.oam[this.dmaAddr] = this.dmaData;
-                        this.dmaAddr++;
+            // if (this.dmaTransfer) {
+            //     if (this.dmaDummy) {
+            //         if (this.clockCounter % 2 === 1) {
+            //             this.dmaDummy = false;
+            //         }
+            //     } else {
+            //         if (this.clockCounter % 2 === 0) {
+            //             this.dmaData = this.cpuRead(this.dmaPage << 8 | this.dmaAddr);
+            //         } else {
+            //             this.ppu.oam[this.dmaAddr] = this.dmaData;
+            //             this.dmaAddr++;
 
-                        if (this.dmaAddr > 0xFF) {
-                            this.dmaTransfer = false;
-                            this.dmaDummy = true;
-                        }
-                    }
-                }
-            } else {
+            //             if (this.dmaAddr > 0xFF) {
+            //                 this.dmaTransfer = false;
+            //                 this.dmaDummy = true;
+            //             }
+            //         }
+            //     }
+            // } else {
                 this.cpu.clock();
-            }
+            // }
         }
 
         if (this.ppu.nmi) {

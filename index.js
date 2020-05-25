@@ -2,24 +2,24 @@
 import NES from './src/NES';
 import * as roms from './roms';
 
-const FPS = 59;
-const romFile = roms.donkey_kong;
-const nameTablePatterIdx = 0;
-const nameTableHex = false;
+const FPS = 60;
+const romFile = roms.game_roms.smb;
 
 const preload = () => {
     window.retroFont = loadFont('./assets/retro_gaming.ttf');
 };
 
 const setup = () => {
-    createCanvas(512 * 2, 960);
-    background(255);
+    createCanvas(256 * 4, 240 * 4);
+    background(0);
     textFont(retroFont);
 
-    if (!FPS) {
+    if (FPS >= 60) {
+        // Do nothing
+    } else if (!FPS) {
         noLoop();
     } else {
-        frameRate(FPS % 60);
+        frameRate(FPS);
     }
 
     // NES
@@ -31,10 +31,12 @@ const setup = () => {
     window.nameTableSprites = [createImage(256, 240), createImage(256, 240)];
     window.patternTableSprites = [createImage(128, 128), createImage(128, 128)];
     window.selectedPalette = 0;
+    window.selectedNameTablePatterIdx = 1;
+    window.nameTableHex = false;
 };
 
 const draw = () => {
-    background('#1b1b1b');
+    background(0);
 
     updateInputs();
     nesFrame();
@@ -61,10 +63,15 @@ const updateInputs = () => {
 };
 
 const keyPressed = () => {
-    // P
-    if (keyCode === 80) {
+    if (keyCode === 80) { // P
         selectedPalette++;
         selectedPalette &= 0x07;
+    }
+    if (keyCode === 79) { // O
+        selectedNameTablePatterIdx = selectedNameTablePatterIdx === 1 ? 0 : 1;
+    }
+    if (keyCode === 73) { // I
+        nameTableHex = !nameTableHex;
     }
     return false;
 };
@@ -83,35 +90,26 @@ const nesFrame = () => {
 };
 
 // Render utils
-const drawSprite = (sprite, x, y, pixelData) => {
+const drawSprite = (sprite, x, y, pixelData, scale = 1) => {
     sprite.loadPixels();
     const len = sprite.pixels.length;
     for (let i = 0; i < len; i++) {
       sprite.pixels[i] = pixelData[i];
     }
     sprite.updatePixels();
-    image(sprite, x, y);
+    image(sprite, x, y, sprite.width * scale, sprite.height * scale);
 };
 
 const drawScreen = () => {
-    stroke(0);
-    strokeWeight(2);
-    noFill();
-    rect(0, 0, 256, 240);
     const screenPixelData = nes.ppu.getScreen();
-    drawSprite(screenSprite, 0, 0, screenPixelData);
+    drawSprite(screenSprite, 0, 0, screenPixelData, 2);
 };
 
 const drawPatternTables = () => {
-    stroke(0);
-    strokeWeight(2);
-    noFill();
-    rect(0, 250, 128, 128);
-    rect(138, 250, 128, 128);
     const patternTablePixelData0 = nes.ppu.getPatternTable(0, selectedPalette);
-    drawSprite(patternTableSprites[0], 0, 250, patternTablePixelData0);
+    drawSprite(patternTableSprites[0], 512, 0, patternTablePixelData0, 2);
     const patternTablePixelData1 = nes.ppu.getPatternTable(1, selectedPalette);
-    drawSprite(patternTableSprites[1], 138, 250, patternTablePixelData1);
+    drawSprite(patternTableSprites[1], 768, 0, patternTablePixelData1, 2);
 };
 
 const drawPaletteTable = () => {
@@ -120,7 +118,7 @@ const drawPaletteTable = () => {
     noFill();
 
     for (let i = 0; i < 8; i++) {
-        const x = i * 20;
+        const x = (i * 20) + 512;
         stroke(0);
         rect(x, 388, 15, 40);
 
@@ -147,22 +145,22 @@ const drawPaletteTable = () => {
 
 const drawNameTable = (idx) => {
     const offsetX = idx * 512;
-    stroke(0);
-    strokeWeight(2);
-    noFill();
-    rect(offsetX, 448, 512, 480);
+    // stroke(0);
+    // strokeWeight(2);
+    // noFill();
+    // rect(offsetX, 448, 512, 480);
     textSize(8);
     fill(255, 0, 0);
     noStroke();
-    const sprite = patternTableSprites[nameTablePatterIdx]; // Which pattern table to use to render bg
-    for (let y = 0; y < 32; y++) {
+    const sprite = patternTableSprites[selectedNameTablePatterIdx]; // Which pattern table to use to render bg
+    for (let y = 0; y < 30; y++) {
         for (let x = 0; x < 32; x++) {
             const value = nes.ppu.nameTables[idx][(y * 32) + x];
             const imageX = (value % 16) * 8;
             const imageY = (Math.floor(value / 16)) * 8;
-            image(sprite, (x * 16) + offsetX, (y * 16) + 448, 16, 16, imageX, imageY, 8, 8);
+            image(sprite, (x * 16) + offsetX, (y * 16) + 480, 16, 16, imageX, imageY, 8, 8);
             if (nameTableHex) {
-                text(value.toString(16), (x * 16) + offsetX, (y * 16) + 464);
+                text(value.toString(16), (x * 16) + offsetX, (y * 16) + 496);
             }
         }
     }
@@ -173,5 +171,5 @@ const drawFrameRate = () => {
     fill(255, 0, 0);
     noStroke();
     const currFrameRate = frameRate().toFixed(1);
-    text(currFrameRate + ' FPS', 261, 240);
+    text(currFrameRate + ' FPS', 512, 480);
 };
