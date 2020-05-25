@@ -3,7 +3,7 @@ import NES from './src/NES';
 import * as roms from './roms';
 
 const FPS = 60;
-const romFile = roms.game_roms.smb;
+const romFile = roms.game_roms.super_mario_bros;
 
 const preload = () => {
     window.retroFont = loadFont('./assets/retro_gaming.ttf');
@@ -43,10 +43,10 @@ const draw = () => {
 
     drawFrameRate();
     drawScreen();
-    drawPatternTables();
-    drawPaletteTable();
-    drawNameTable(0);
-    drawNameTable(1);
+    // drawPatternTables();
+    // drawPaletteTable();
+    // drawNameTable(0);
+    // drawNameTable(1);
 };
 
 const updateInputs = () => {
@@ -102,7 +102,7 @@ const drawSprite = (sprite, x, y, pixelData, scale = 1) => {
 
 const drawScreen = () => {
     const screenPixelData = nes.ppu.getScreen();
-    drawSprite(screenSprite, 0, 0, screenPixelData, 2);
+    drawSprite(screenSprite, 0, 0, screenPixelData, 4);
 };
 
 const drawPatternTables = () => {
