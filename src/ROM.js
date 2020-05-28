@@ -1,11 +1,13 @@
 import Mapper000 from './Mappers/Mapper000';
 import Mapper002 from './Mappers/Mapper002';
 import Mapper003 from './Mappers/Mapper003';
+import Mapper066 from './Mappers/Mapper066';
 
 const mappers = new Map();
 mappers.set(0, Mapper000);
 mappers.set(2, Mapper002);
 mappers.set(3, Mapper003);
+mappers.set(66, Mapper066);
 
 class ROM {
     constructor(data) {
