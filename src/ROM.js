@@ -1,10 +1,13 @@
 import Mapper000 from './Mappers/Mapper000';
+import Mapper002 from './Mappers/Mapper002';
 
 const mappers = new Map();
 mappers.set(0, Mapper000);
+mappers.set(2, Mapper002);
 
 class ROM {
     constructor(data) {
+        this.romData = null;
         this.prgMemory = null;
         this.chrMemory = null;
         this.header = {};
@@ -47,17 +50,22 @@ class ROM {
         if (fileFormat === 1) {
             this.fileFormat = 'iNES';
 
-            const prgMemorySize = this.header.prgBanks * 16384;
+            const prgMemorySize = this.header.prgBanks * 16384; // 16kb banks
             this.prgMemory = new Uint8Array(prgMemorySize);
             for (let i = 0; i < prgMemorySize; i++) {
                 this.prgMemory[i] = data[readPosition++];
             }
 
-            const chrMemorySize = this.header.chrBanks * 8192;
-            this.chrMemory = new Uint8Array(chrMemorySize);
-            for (let i = 0; i < chrMemorySize; i++) {
-                this.chrMemory[i] = data[readPosition++];
+            if (this.header.chrBanks === 0) {
+                this.chrMemory = new Uint8Array(8192);
+            } else {
+                const chrMemorySize = this.header.chrBanks * 8192; // 8kb banks
+                this.chrMemory = new Uint8Array(chrMemorySize);
+                for (let i = 0; i < chrMemorySize; i++) {
+                    this.chrMemory[i] = data[readPosition++];
+                }
             }
+
         }
 
         if (fileFormat === 2) {
@@ -71,6 +79,7 @@ class ROM {
             console.error('Unsupperted mapper: ', this.mapperId);
         } else {
             this.mapper = new MapperClass(this);
+            this.romData = data;
         }
     }
 
@@ -83,7 +92,7 @@ class ROM {
     }
 
     cpuWrite(addr, data) {
-        const mappedAddr = this.mapper.mapCpuWriteAddr(addr);
+        const mappedAddr = this.mapper.mapCpuWriteAddr(addr, data);
         if (mappedAddr !== false) {
             this.prgMemory[mappedAddr] = data;
         }
@@ -99,12 +108,26 @@ class ROM {
     }
 
     ppuWrite(addr, data) {
-        const mappedAddr = this.mapper.mapPpuWriteAddr(addr);
+        const mappedAddr = this.mapper.mapPpuWriteAddr(addr, data);
         if (mappedAddr !== false) {
             this.chrMemory[mappedAddr] = data;
             return true;
         }
         return false;
+    }
+
+    reset() {
+        if (this.mapper) {
+            this.mapper.reset();
+        }
+    }
+
+    getMirror() {
+        const m = this.mapper.getMirror();
+        if (!m || m === 'HARDWARE') {
+            return this.mirror;
+        }
+        return m;
     }
 }
 

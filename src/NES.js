@@ -77,12 +77,20 @@ class NES {
     }
 
     reset() {
+        this.rom.reset();
         this.cpu.reset();
+        // this.ppu.reset();
         this.clockCounter = 0;
         this.frameCounter = 0;
+        this.dmaPage = 0x00;
+        this.dmaAddr = 0x00;
+        this.dmaData = 0x00;
+        this.dmaTransfer = false;
+        this.dmaDummy = true;
     }
 
     clock() {
+        // debugger;
         this.ppu.clock();
 
         if (this.clockCounter % 3 === 0) {

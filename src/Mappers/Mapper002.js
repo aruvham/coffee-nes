@@ -1,19 +1,26 @@
-class Mapper000 {
+class Mapper002 {
     constructor({ header: { prgBanks, chrBanks } }) {
         this.prgBanks = prgBanks;
         this.chrBanks = chrBanks;
+        this.prgBankSelectedLo = 0;
+        this.prgBankSelectedHi = 0;
     }
 
     mapCpuReadAddr(addr) {
-        if (addr >= 0x8000 && addr <= 0xFFFF) {
-            return addr & (this.prgBanks > 1 ? 0x7FFF : 0x3FFF);
+        if (addr >= 0x8000 && addr <= 0xBFFF) {
+            return this.prgBankSelectedLo * 0x4000 + (addr & 0x3FFF);
         }
+
+        if (addr >= 0xC000 && addr <= 0xFFFF) {
+            return this.prgBankSelectedHi * 0x4000 + (addr & 0x3FFF);
+        }
+
         return false;
     }
 
-    mapCpuWriteAddr(addr) {
+    mapCpuWriteAddr(addr, data) {
         if (addr >= 0x8000 && addr <= 0xFFFF) {
-            return addr & (this.prgBanks > 1 ? 0x7FFF : 0x3FFF);
+            this.prgBankSelectedLo = data & 0x0F;
         }
         return false;
     }
@@ -35,9 +42,12 @@ class Mapper000 {
         return false;
     }
 
-    reset() { }
+    reset() {
+        this.prgBankSelectedLo = 0;
+        this.prgBankSelectedHi = this.prgBanks - 1;
+    }
 
     getMirror() { return 'HARDWARE'; }
 }
 
-export default Mapper000;
+export default Mapper002;

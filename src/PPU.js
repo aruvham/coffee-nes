@@ -299,7 +299,7 @@ class PPU {
         let data = 0x00;
         const romReadData = this.rom.ppuRead(addr);
 
-        if (romReadData !== false) {
+        if (romReadData !== false) { //  && romReadData !== undefined) {
             //
             data = romReadData;
         } else if (addr >= 0x0000 && addr <= 0x1FFF) {
@@ -308,7 +308,7 @@ class PPU {
         } else if (addr >= 0x2000 && addr <= 0x3EFF) {
             // Name table mem
             addr &= 0x0FFF;
-            if (this.nes.rom.mirror === 'VERTICAL') {
+            if (this.nes.rom.getMirror() === 'VERTICAL') {
                 if (addr >= 0x0000 && addr <= 0x03FF) {
                     data = this.nameTables[0][addr & 0x03FF];
                 } else if (addr >= 0x0400 && addr <= 0x07FF) {
@@ -318,7 +318,7 @@ class PPU {
                 } else if (addr >= 0x0C00 && addr <= 0x0FFF) {
                     data = this.nameTables[1][addr & 0x03FF];
                 }
-            } else if (this.nes.rom.mirror === 'HORIZONTAL') {
+            } else if (this.nes.rom.getMirror() === 'HORIZONTAL') {
                 if (addr >= 0x0000 && addr <= 0x03FF) {
                     data = this.nameTables[0][addr & 0x03FF];
                 } else if (addr >= 0x0400 && addr <= 0x07FF) {
@@ -354,7 +354,7 @@ class PPU {
         } else if (addr >= 0x2000 && addr <= 0x3EFF) {
             // Name table mem
             addr &= 0x0FFF;
-            if (this.nes.rom.mirror === 'VERTICAL') {
+            if (this.nes.rom.getMirror() === 'VERTICAL') {
                 if (addr >= 0x0000 && addr <= 0x03FF) {
                     this.nameTables[0][addr & 0x03FF] = data;
                 } else if (addr >= 0x0400 && addr <= 0x07FF) {
@@ -364,7 +364,7 @@ class PPU {
                 } else if (addr >= 0x0C00 && addr <= 0x0FFF) {
                     this.nameTables[1][addr & 0x03FF] = data;
                 }
-            } else if (this.nes.rom.mirror === 'HORIZONTAL') {
+            } else if (this.nes.rom.getMirror() === 'HORIZONTAL') {
                 if (addr >= 0x0000 && addr <= 0x03FF) {
                     this.nameTables[0][addr & 0x03FF] = data;
                 } else if (addr >= 0x0400 && addr <= 0x07FF) {
@@ -460,6 +460,8 @@ class PPU {
     }
 
     clock() {
+        // if (window.DEBUG) console.log(this.scanline, this.cycle);
+        // if (this.renderBackground) debugger;
         if (this.scanline >= -1 && this.scanline < 240) {
             if (this.scanline === 0 && this.cycle === 0) {
                 this.cycle = 1;
@@ -498,6 +500,7 @@ class PPU {
                     // const c = (this.vramFineY);
                     // const d = 0;
                     // const e = a+b+c+d;
+                    // debugger;
                     this.bgNextTileLsb = this.ppuRead(((this.patternBackground ? 1 : 0) << 12)
                     + (this.bgNextTileId << 4)
                     + (this.vramFineY) + 0);
