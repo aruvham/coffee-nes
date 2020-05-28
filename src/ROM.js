@@ -1,9 +1,11 @@
 import Mapper000 from './Mappers/Mapper000';
 import Mapper002 from './Mappers/Mapper002';
+import Mapper003 from './Mappers/Mapper003';
 
 const mappers = new Map();
 mappers.set(0, Mapper000);
 mappers.set(2, Mapper002);
+mappers.set(3, Mapper003);
 
 class ROM {
     constructor(data) {
@@ -19,6 +21,7 @@ class ROM {
     }
 
     loadRomData(data) {
+        // console.log(data);
         let name = String.fromCharCode(data[0]);
         name += String.fromCharCode(data[1]);
         name += String.fromCharCode(data[2]);
@@ -38,7 +41,7 @@ class ROM {
 
         const hasTrainer = this.header.mapper1 & 0x04;
         let readPosition = hasTrainer ? 16 + 512 : 16;
-        this.mapperId = ((this.header.mapper2 >> 4) << 4) | (this.header.mapper1 >> 4);
+        this.mapperId = (this.header.mapper1 >> 4) | (this.header.mapper2 & 0xf0);
         this.mirror = (this.header.mapper1 & 0x01) ? 'VERTICAL' : 'HORIZONTAL';
         const fileFormat = 1;
 
@@ -65,7 +68,6 @@ class ROM {
                     this.chrMemory[i] = data[readPosition++];
                 }
             }
-
         }
 
         if (fileFormat === 2) {

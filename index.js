@@ -3,7 +3,8 @@ import NES from './src/NES';
 import * as roms from './roms';
 
 const FPS = 60;
-const romFile = roms.game_roms.castlevania;
+const romFile = roms.game_roms.cybernoid;
+// console.log(roms)
 
 const preload = () => {
     window.retroFont = loadFont('./assets/retro_gaming.ttf');
