@@ -2,9 +2,11 @@
 import NES from './src/NES';
 import * as roms from './roms';
 
-const FPS = 60;
-const romFile = roms.game_roms.cybernoid;
-// console.log(roms)
+const FPS = 30;
+const romFile = roms.test_roms.official_only;
+console.log('official_only');
+let logTime = false;
+const framesPerDraw = 2;
 
 const preload = () => {
     window.retroFont = loadFont('./assets/retro_gaming.ttf');
@@ -17,10 +19,12 @@ const setup = () => {
 
     if (FPS >= 60) {
         // Do nothing
+        logTime = false;
     } else if (!FPS) {
         noLoop();
     } else {
         frameRate(FPS);
+        logTime = false;
     }
 
     // NES
@@ -40,14 +44,22 @@ const draw = () => {
     background(0);
 
     updateInputs();
-    nesFrame();
+    let i = framesPerDraw;
+    while (i) {
+        logTime && console.time('nesFrame');
+        nesFrame();
+        logTime && console.timeEnd('nesFrame');
+        i--;
+    }
 
+    logTime && console.time('render');
     drawFrameRate();
     drawScreen();
     drawPatternTables();
     drawPaletteTable();
     drawNameTable(0);
     drawNameTable(1);
+    logTime && console.timeEnd('render');
 };
 
 const updateInputs = () => {

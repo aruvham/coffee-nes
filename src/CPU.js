@@ -363,6 +363,7 @@ class CPU {
     }
 
     clock() {
+        // if (this.clockCounter === 92523) debugger;
         if (this.cycles === 0) {
             this.opcode = this.read(this.pc++);
             const instruction = instructionLookup[this.opcode];
@@ -376,7 +377,7 @@ class CPU {
             if (this.x < 0 || this.x > 0xFF) console.error('Error | X', this.x);
             if (this.y < 0 || this.y > 0xFF) console.error('Error | Y', this.Y);
             if (this.addrAbs < 0 || this.addrAbs > 0xFFFF) console.error('Error | this.addrAbs ', this.addrAbs);
-            if (instruction.name === 'XXX') console.error('XXX', this.opcode.toString(16));
+            if (instruction.name === 'XXX') console.error('XXX', this.opcode.toString(16), this.clockCounter);
         }
 
         this.cycles--;

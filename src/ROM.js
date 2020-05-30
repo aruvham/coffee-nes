@@ -1,10 +1,12 @@
 import Mapper000 from './Mappers/Mapper000';
+import Mapper001 from './Mappers/Mapper001';
 import Mapper002 from './Mappers/Mapper002';
 import Mapper003 from './Mappers/Mapper003';
 import Mapper066 from './Mappers/Mapper066';
 
 const mappers = new Map();
 mappers.set(0, Mapper000);
+mappers.set(1, Mapper001);
 mappers.set(2, Mapper002);
 mappers.set(3, Mapper003);
 mappers.set(66, Mapper066);
@@ -90,6 +92,11 @@ class ROM {
     cpuRead(addr) {
         const mappedAddr = this.mapper.mapCpuReadAddr(addr);
         if (mappedAddr !== false) {
+            // vram
+            if (addr >= 0x6000 && addr <= 0x7FFF) {
+                return this.mapper.vram && this.mapper.vram[mappedAddr]; // addr & 0x1FFF;
+            }
+
             return this.prgMemory[mappedAddr];
         }
         return false;
@@ -98,7 +105,15 @@ class ROM {
     cpuWrite(addr, data) {
         const mappedAddr = this.mapper.mapCpuWriteAddr(addr, data);
         if (mappedAddr !== false) {
-            this.prgMemory[mappedAddr] = data;
+            // vram
+            if (addr >= 0x6000 && addr <= 0x7FFF) {
+                if (this.mapper.vram) {
+                    this.mapper.vram[mappedAddr] = data;
+                }
+            } else {
+                this.prgMemory[mappedAddr] = data;
+            }
+            return true;
         }
         return false;
     }
