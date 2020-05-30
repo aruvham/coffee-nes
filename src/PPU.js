@@ -1,69 +1,202 @@
 // https://wiki.nesdev.com/w/index.php/PPU_palettes
+// const paletteLookup = [
+//     [84, 84, 84],
+//     [0, 30, 116],
+//     [8, 16, 144],
+//     [48, 0, 136],
+//     [68, 0, 100],
+//     [92, 0, 48],
+//     [84, 4, 0],
+//     [60, 24, 0],
+//     [32, 42, 0],
+//     [8, 58, 0],
+//     [0, 64, 0],
+//     [0, 60, 0],
+//     [0, 50, 60],
+//     [0, 0, 0],
+//     [0, 0, 0],
+//     [0, 0, 0],
+//     [152, 150, 152],
+//     [8, 76, 196],
+//     [48, 50, 236],
+//     [92, 30, 228],
+//     [136, 20, 176],
+//     [160, 20, 100],
+//     [152, 34, 32],
+//     [120, 60, 0],
+//     [84, 90, 0],
+//     [40, 114, 0],
+//     [8, 124, 0],
+//     [0, 118, 40],
+//     [0, 102, 120],
+//     [0, 0, 0],
+//     [0, 0, 0],
+//     [0, 0, 0],
+//     [236, 238, 236],
+//     [76, 154, 236],
+//     [120, 124, 236],
+//     [176, 98, 236],
+//     [228, 84, 236],
+//     [236, 88, 180],
+//     [236, 106, 100],
+//     [212, 136, 32],
+//     [160, 170, 0],
+//     [116, 196, 0],
+//     [76, 208, 32],
+//     [56, 204, 108],
+//     [56, 180, 204],
+//     [60, 60, 60],
+//     [0, 0, 0],
+//     [0, 0, 0],
+//     [236, 238, 236],
+//     [168, 204, 236],
+//     [188, 188, 236],
+//     [212, 178, 236],
+//     [236, 174, 236],
+//     [236, 174, 212],
+//     [236, 180, 176],
+//     [228, 196, 144],
+//     [204, 210, 120],
+//     [180, 222, 120],
+//     [168, 226, 144],
+//     [152, 226, 180],
+//     [160, 214, 228],
+//     [160, 162, 160],
+//     [0, 0, 0],
+//     [0, 0, 0],
+// ];
+
+// const paletteLookup = [];
+// paletteLookup[0] = [117, 117, 117];
+// paletteLookup[1] = [39, 27, 143];
+// paletteLookup[2] = [0, 0, 171];
+// paletteLookup[3] = [71, 0, 159];
+// paletteLookup[4] = [143, 0, 119];
+// paletteLookup[5] = [171, 0, 19];
+// paletteLookup[6] = [167, 0, 0];
+// paletteLookup[7] = [127, 11, 0];
+// paletteLookup[8] = [67, 47, 0];
+// paletteLookup[9] = [0, 71, 0];
+// paletteLookup[10] = [0, 81, 0];
+// paletteLookup[11] = [0, 63, 23];
+// paletteLookup[12] = [27, 63, 95];
+// paletteLookup[13] = [0, 0, 0];
+// paletteLookup[14] = [0, 0, 0];
+// paletteLookup[15] = [0, 0, 0];
+// paletteLookup[16] = [188, 188, 188];
+// paletteLookup[17] = [0, 115, 239];
+// paletteLookup[18] = [35, 59, 239];
+// paletteLookup[19] = [131, 0, 243];
+// paletteLookup[20] = [191, 0, 191];
+// paletteLookup[21] = [231, 0, 91];
+// paletteLookup[22] = [219, 43, 0];
+// paletteLookup[23] = [203, 79, 15];
+// paletteLookup[24] = [139, 115, 0];
+// paletteLookup[25] = [0, 151, 0];
+// paletteLookup[26] = [0, 171, 0];
+// paletteLookup[27] = [0, 147, 59];
+// paletteLookup[28] = [0, 131, 139];
+// paletteLookup[29] = [0, 0, 0];
+// paletteLookup[30] = [0, 0, 0];
+// paletteLookup[31] = [0, 0, 0];
+// paletteLookup[32] = [255, 255, 255];
+// paletteLookup[33] = [63, 191, 255];
+// paletteLookup[34] = [95, 151, 255];
+// paletteLookup[35] = [167, 139, 253];
+// paletteLookup[36] = [247, 123, 255];
+// paletteLookup[37] = [255, 119, 183];
+// paletteLookup[38] = [255, 119, 99];
+// paletteLookup[39] = [255, 155, 59];
+// paletteLookup[40] = [243, 191, 63];
+// paletteLookup[41] = [131, 211, 19];
+// paletteLookup[42] = [79, 223, 75];
+// paletteLookup[43] = [88, 248, 152];
+// paletteLookup[44] = [0, 235, 219];
+// paletteLookup[45] = [0, 0, 0];
+// paletteLookup[46] = [0, 0, 0];
+// paletteLookup[47] = [0, 0, 0];
+// paletteLookup[48] = [255, 255, 255];
+// paletteLookup[49] = [171, 231, 255];
+// paletteLookup[50] = [199, 215, 255];
+// paletteLookup[51] = [215, 203, 255];
+// paletteLookup[52] = [255, 199, 255];
+// paletteLookup[53] = [255, 199, 219];
+// paletteLookup[54] = [255, 191, 179];
+// paletteLookup[55] = [255, 219, 171];
+// paletteLookup[56] = [255, 231, 163];
+// paletteLookup[57] = [227, 255, 163];
+// paletteLookup[58] = [171, 243, 191];
+// paletteLookup[59] = [179, 255, 207];
+// paletteLookup[60] = [159, 255, 243];
+// paletteLookup[61] = [0, 0, 0];
+// paletteLookup[62] = [0, 0, 0];
+// paletteLookup[63] = [0, 0, 0];
+
 const paletteLookup = [
-    [84, 84, 84],
-    [0, 30, 116],
-    [8, 16, 144],
-    [48, 0, 136],
-    [68, 0, 100],
-    [92, 0, 48],
-    [84, 4, 0],
-    [60, 24, 0],
-    [32, 42, 0],
-    [8, 58, 0],
-    [0, 64, 0],
-    [0, 60, 0],
-    [0, 50, 60],
-    [0, 0, 0],
-    [0, 0, 0],
-    [0, 0, 0],
-    [152, 150, 152],
-    [8, 76, 196],
-    [48, 50, 236],
-    [92, 30, 228],
-    [136, 20, 176],
-    [160, 20, 100],
-    [152, 34, 32],
-    [120, 60, 0],
-    [84, 90, 0],
-    [40, 114, 0],
-    [8, 124, 0],
-    [0, 118, 40],
-    [0, 102, 120],
-    [0, 0, 0],
-    [0, 0, 0],
-    [0, 0, 0],
-    [236, 238, 236],
-    [76, 154, 236],
-    [120, 124, 236],
-    [176, 98, 236],
-    [228, 84, 236],
-    [236, 88, 180],
-    [236, 106, 100],
-    [212, 136, 32],
-    [160, 170, 0],
-    [116, 196, 0],
-    [76, 208, 32],
-    [56, 204, 108],
-    [56, 180, 204],
-    [60, 60, 60],
-    [0, 0, 0],
-    [0, 0, 0],
-    [236, 238, 236],
-    [168, 204, 236],
-    [188, 188, 236],
-    [212, 178, 236],
-    [236, 174, 236],
-    [236, 174, 212],
-    [236, 180, 176],
-    [228, 196, 144],
-    [204, 210, 120],
-    [180, 222, 120],
-    [168, 226, 144],
-    [152, 226, 180],
-    [160, 214, 228],
-    [160, 162, 160],
-    [0, 0, 0],
-    [0, 0, 0],
+    [124,124,124],
+    [0,0,252],
+    [0,0,188],
+    [68,40,188],
+    [148,0,132],
+    [168,0,32],
+    [168,16,0],
+    [136,20,0],
+    [80,48,0],
+    [0,120,0],
+    [0,104,0],
+    [0,88,0],
+    [0,64,88],
+    [0,0,0],
+    [0,0,0],
+    [0,0,0],
+    [188,188,188],
+    [0,120,248],
+    [0,88,248],
+    [104,68,252],
+    [216,0,204],
+    [228,0,88],
+    [248,56,0],
+    [228,92,16],
+    [172,124,0],
+    [0,184,0],
+    [0,168,0],
+    [0,168,68],
+    [0,136,136],
+    [0,0,0],
+    [0,0,0],
+    [0,0,0],
+    [248,248,248],
+    [60,188,252],
+    [104,136,252],
+    [152,120,248],
+    [248,120,248],
+    [248,88,152],
+    [248,120,88],
+    [252,160,68],
+    [248,184,0],
+    [184,248,24],
+    [88,216,84],
+    [88,248,152],
+    [0,232,216],
+    [120,120,120],
+    [0,0,0],
+    [0,0,0],
+    [252,252,252],
+    [164,228,252],
+    [184,184,248],
+    [216,184,248],
+    [248,184,248],
+    [248,164,192],
+    [240,208,176],
+    [252,224,168],
+    [248,216,120],
+    [216,248,120],
+    [184,248,184],
+    [184,248,216],
+    [0,252,252],
+    [248,216,248],
+    [0,0,0],
+    [0,0,0],
 ];
 
 class PPU {
@@ -138,7 +271,7 @@ class PPU {
         this.bgShifterAttrHi = 0x0000;
 
         // oam
-        this.oam = new Uint8Array(0xFF); // 256 bites
+        this.oam = new Uint8Array(256); // 256 bites
         this.oamAddr = 0x00;
         this.spriteScanline = [];
         this.spriteCount = 0;
@@ -217,6 +350,7 @@ class PPU {
         case 0x0003: // OAM Address
             break;
         case 0x0004: // OAM Data
+            // console.log('OAM READ', this.oamAddr, this.oam[this.oamAddr]);
             data = this.oam[this.oamAddr];
             break;
         case 0x0005: // Scroll
@@ -254,10 +388,13 @@ class PPU {
             // Not writable
             break;
         case 0x0003: // OAM Address
+            // console.log('OAM WRITE ADDR', data);
             this.oamAddr = data;
             break;
         case 0x0004: // OAM Data
+            // console.log('OAM WRITE DATA', this.oamAddr, data);
             this.oam[this.oamAddr] = data;
+            this.oamAddr++;
             break;
         case 0x0005: // Scroll
             if (this.addrLatch === 0) {
@@ -285,7 +422,6 @@ class PPU {
             }
             break;
         case 0x0007: // PPU Data
-        
             this.vramAddr = this.getVramAddr();
             this.ppuWrite(this.vramAddr, data);
             this.vramAddr += this.incrementMode ? 32 : 1;
@@ -337,7 +473,7 @@ class PPU {
             if (addr === 0x0014) addr = 0x0004;
             if (addr === 0x0018) addr = 0x0008;
             if (addr === 0x001C) addr = 0x000C;
-            data = this.paletteTable[addr];
+            data = this.paletteTable[addr] & (this.grayscale ? 0x30 : 0x3F);
         }
 
         return data;
@@ -593,11 +729,11 @@ class PPU {
                                 | ((this.spriteScanline[i].id & 0xFE) << 4)
                                 | ((this.scanline - this.spriteScanline[i].y) & 0x07);
                             } else {
-                                if (this.scanline - this.spriteScanline[i].y < 8) {
-                                    spritePatternAddrLo = ((this.spriteScanline[i].id & 0x01) << 12)
-                                    | (((this.spriteScanline[i].id & 0xFE) + 1) << 4)
-                                    | ((this.scanline - this.spriteScanline[i].y) & 0x07);
-                                }
+                                // if (this.scanline - this.spriteScanline[i].y < 8) {
+                                spritePatternAddrLo = ((this.spriteScanline[i].id & 0x01) << 12)
+                                | (((this.spriteScanline[i].id & 0xFE) + 1) << 4)
+                                | ((this.scanline - this.spriteScanline[i].y) & 0x07);
+                                // }
                             }
                         } else {
                             // flipped vertically

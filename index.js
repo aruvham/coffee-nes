@@ -2,11 +2,23 @@
 import NES from './src/NES';
 import * as roms from './roms';
 
-const FPS = 20;
-const romFile = roms.test_roms.official_only;
-console.log('test_ppu_read_buffer');
+const FPS = 30;
+// const romName = 'super_';
+const romFile = roms.game_roms.gradius;
+// console.log('_1200_in_1');
 let logTime = false;
-const framesPerDraw = 3;
+const framesPerDraw = 2;
+const renderMode = 'MEM';
+
+// color test E & greymode
+// demo_ntsc X
+// full_palette ??
+// oam_read X
+// oam_stress x
+// palette_ram Y
+// power_up_palette
+// scanline X
+
 
 const preload = () => {
     window.retroFont = loadFont('./assets/retro_gaming.ttf');
@@ -52,14 +64,16 @@ const draw = () => {
         i--;
     }
 
-    logTime && console.time('render');
-    drawFrameRate();
     drawScreen();
-    drawPatternTables();
-    drawPaletteTable();
-    drawNameTable(0);
-    drawNameTable(1);
-    logTime && console.timeEnd('render');
+    if (renderMode === 'MEM') {
+        logTime && console.time('render');
+        drawFrameRate();
+        drawPatternTables();
+        drawPaletteTable();
+        drawNameTable(0);
+        drawNameTable(1);
+        logTime && console.timeEnd('render');
+    }
 };
 
 const updateInputs = () => {
@@ -115,7 +129,7 @@ const drawSprite = (sprite, x, y, pixelData, scale = 1) => {
 
 const drawScreen = () => {
     const screenPixelData = nes.ppu.getScreen();
-    drawSprite(screenSprite, 0, 0, screenPixelData, 2);
+    drawSprite(screenSprite, 0, 0, screenPixelData, renderMode === 'PLAY' ? 4 : 2);
 };
 
 const drawPatternTables = () => {
