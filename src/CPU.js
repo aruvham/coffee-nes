@@ -1,5 +1,5 @@
 const instructionLookup = [
-    { name: 'BRK', addrmode: 'IMM', cycles: 7 }, // 0x00
+    { name: 'BRK', addrmode: 'IMP', cycles: 7 }, // 0x00
     { name: 'ORA', addrmode: 'IZX', cycles: 6 }, // 0x01
     { name: 'XXX', addrmode: 'XXX', cycles: 0 }, // 0x02
     { name: 'XXX', addrmode: 'XXX', cycles: 0 }, // 0x03
@@ -312,16 +312,19 @@ class CPU {
 
     write(addr, data) {
         if (addr < 0 || addr > 0xFFFF) console.error('Error | Writing to mem', addr);
-        this.nes.cpuWrite(addr, data);
+        this.nes.cpuWrite(addr & 0xFFFF, data);
     }
 
     stackPop() {
-        return this.read(0x0100 | ++this.sp);
+        this.sp = (this.sp + 1) & 0xFF;
+        return this.read(0x0100 | this.sp);
     }
 
     stackPush(data) {
         if (data < 0 || data > 0xFF) console.error('Error | Writing to stack', data);
-        this.write(0x0100 | this.sp--, data);
+        if (this.sp < 0 || this.sp > 0xFF) console.error('Error | Stack Pointer', this.sp);
+        this.write(0x0100 | this.sp, data);
+        this.sp = (this.sp - 1) & 0xFF;
     }
 
     // External Inputs
@@ -363,9 +366,10 @@ class CPU {
     }
 
     clock() {
-        // if (this.clockCounter === 92523) debugger;
+        // if (this.clockCounter === 351849) debugger;
         if (this.cycles === 0) {
             this.opcode = this.read(this.pc++);
+            // if (this.opcode === 0x00) debugger;
             const instruction = instructionLookup[this.opcode];
             const extraCycleFromAddrMode = this[instruction.addrmode]();
             const extraCycleFromInstruction = this[instruction.name]();
@@ -628,11 +632,15 @@ class CPU {
 
     // Force Break
     BRK() {
+        // debugger;
         this.pc++;
-        this.stackPush(this.pc >> 8);
+        this.stackPush((this.pc >> 8) & 0x00FF);
         this.stackPush(this.pc & 0x00FF);
         this.stackPush(this.getStatus() | 0x10);
+        this.I = true;
         this.pc = (this.read(0xFFFF) << 8) | this.read(0xFFFE);
+        // this.pc = (this.read(0xFFFD) << 8) | this.read(0xFFFC);
+        // this.pc--;
         return 0;
     }
 
@@ -896,6 +904,7 @@ class CPU {
     // Return from Interrupt
     RTI() {
         this.setStatus(this.stackPop());
+        // console.log(this.getStatus())
         const lo = this.stackPop();
         const hi = this.stackPop() << 8;
         this.pc = hi | lo;

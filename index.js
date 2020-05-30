@@ -2,11 +2,11 @@
 import NES from './src/NES';
 import * as roms from './roms';
 
-const FPS = 30;
+const FPS = 20;
 const romFile = roms.test_roms.official_only;
-console.log('official_only');
+console.log('test_ppu_read_buffer');
 let logTime = false;
-const framesPerDraw = 2;
+const framesPerDraw = 3;
 
 const preload = () => {
     window.retroFont = loadFont('./assets/retro_gaming.ttf');
