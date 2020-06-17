@@ -22,7 +22,7 @@ Support for mappers (list of compatible games): [0], [1], [2], [3], and [66].
   <img src="https://drive.google.com/uc?export=view&id=1rITjcgh0xHnjEQHwIXTr_mgg8WVheUaA" />
 </h3>
 
-Acknowledgement
+Acknowledgements
 ------
 
 This project wouldn't have been possible without the following people:
